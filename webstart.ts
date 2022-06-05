@@ -16,7 +16,7 @@ import "codemirror/addon/fold/foldgutter";
 import "codemirror/addon/fold/brace-fold";
 import "codemirror/addon/fold/comment-fold";
 import "./style.scss";
-import {BuiltinLib} from "./builtinlib"
+import {BuiltinLib, builtinPython} from "./builtinlib"
 import { RunTimeError } from './error_reporting';
 
 function index_out_of_bounds(length: any, index: any): any {
@@ -139,7 +139,7 @@ function webStart() {
       repl = new BasicREPL(importObject);
       const source = document.getElementById("user-code") as HTMLTextAreaElement;
       resetRepl();
-      repl.run(source.value).then((r) => {
+      repl.run(builtinPython+source.value).then((r) => {
         var objectTrackList = repl.trackObject(r, repl.trackHeap());
         renderResult(r, objectTrackList);
         console.log("run finished")

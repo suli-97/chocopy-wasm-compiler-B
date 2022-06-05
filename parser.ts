@@ -462,7 +462,7 @@ export function traverseKeywordArguments(c : TreeCursor, s : string) : Array<[st
     }else{
       if(startParsingKwargs)
         throw new ParseError("kwarg should exist after usual args")
-        args.push(["",expr]);
+      args.push(["",expr]);
     }
       
     c.nextSibling(); // Focuses on a VariableName
@@ -1043,6 +1043,7 @@ function handleArgCompletion(callName: string, kwargs:[string,Expr<SourceLocatio
         return [{a:location, tag:"literal", value:{a:location, tag:"num", value:0}}, kwargs[0][1], {a:location, tag:"literal", value:{a:location, tag:"num", value:1}}]
       if(kwargs.length==2)
         return [...kwargs.map(x=>x[1]), {a:location, tag:"literal", value:{a:location, tag:"num", value:1}}]
+      break
     case "sort":
       let reverse:Expr<SourceLocation> = {a:location, tag:"literal", value:{a:location, tag:"bool", value:false}}
       let method:Expr<SourceLocation> = {a:location, tag:"literal", value:{a:location, tag:"num", value:0}}
