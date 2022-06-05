@@ -58,6 +58,13 @@ function webStart() {
           for(let i=1;i<=length;i++)
             funcForPrint(IntBuffer[Math.floor(arg/4 + i)]);
           return 0;
+        },
+        sort: (arg:number, reverse:boolean, method:number)=>{
+          var address = Math.floor(arg/4)
+          var len = IntBuffer[address]
+          const subArray = IntBuffer.subarray(address+1, address+ 1+len)
+          subArray.sort((x:number,y:number)=>reverse?y-x:x-y)
+          return 0
         }
       },
       libmemory: memoryModule.instance.exports,

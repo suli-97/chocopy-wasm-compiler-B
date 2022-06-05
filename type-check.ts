@@ -53,6 +53,7 @@ BuiltinLib.forEach(x=>{
 })
 defaultGlobalFunctions.set("print", [[CLASS("object")], NUM]);
 defaultGlobalFunctions.set("len", [[], NUM]);
+defaultGlobalFunctions.set("sort", [[{tag:"list", type:NUM}, BOOL, NUM], NONE]);
 
 export const defaultTypeEnv = {
   globals: new Map(),

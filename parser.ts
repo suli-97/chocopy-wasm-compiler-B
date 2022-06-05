@@ -74,14 +74,14 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
       const callStr = s.substring(c.from, c.to);
       const genericRegex = /\[[A-Za-z]*\]/g;
       const genericArgs = callStr.match(genericRegex);
-
+      
       c.firstChild();
       let callExpr = traverseExpr(c, s);
       c.nextSibling(); // go to arglist
-      const args = traverseArguments(c, s);
+      const kwargs = traverseKeywordArguments(c, s);
+      let args = kwargs.map(x=>x[1]);
       c.parent(); // pop CallExpression
-
-      if(genericArgs) {
+      if(false) {
         const genArgsStr = genericArgs.toString();
         const commaSepArgs = genArgsStr.substring(1, genArgsStr.length - 1);
         const genTypes = commaSepArgs.split(',').map(s => typeFromString(s));
@@ -105,6 +105,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
       } else if (callExpr.tag === "id") {
         const callName = callExpr.name;
         var expr : Expr<SourceLocation>;
+        args = handleArgCompletion(callName, kwargs, location);
         if (callName === "set") {
           c.firstChild();
           c.nextSibling(); // go to arglist
@@ -442,7 +443,33 @@ export function traverseArguments(c : TreeCursor, s : string) : Array<Expr<Sourc
   c.parent();       // Pop to ArgList
   return args;
 }
-
+export function traverseKeywordArguments(c : TreeCursor, s : string) : Array<[string, Expr<SourceLocation>]> {
+  var startParsingKwargs = false
+  c.firstChild();  // Focuses on open paren
+  const args:Array<[string, Expr<SourceLocation>]> = [];
+  c.nextSibling();
+  while(c.type.name !== ")") {
+    let expr = traverseExpr(c, s);
+    c.nextSibling(); // Focuses on either "," or ")"
+    if(c.name==="AssignOp"){
+      startParsingKwargs = true
+      if (expr.tag!="id")
+        throw new ParseError("kwarg name should be a variable")
+      c.nextSibling();
+      let expr_ = traverseExpr(c,s)
+      args.push([expr.name, expr_])
+      c.nextSibling();
+    }else{
+      if(startParsingKwargs)
+        throw new ParseError("kwarg should exist after usual args")
+        args.push(["",expr]);
+    }
+      
+    c.nextSibling(); // Focuses on a VariableName
+  } 
+  c.parent();       // Pop to ArgList
+  return args;
+}
 export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> {
   var location = getSourceLocation(c, s);
   switch(c.node.type.name) {
@@ -1009,3 +1036,23 @@ export function parse(source : string) : Program<SourceLocation> {
   const str = stringifyTree(t.cursor(), source, 0);
   return traverse(t.cursor(), source);
 }
+function handleArgCompletion(callName: string, kwargs:[string,Expr<SourceLocation>][], location:SourceLocation): Expr<SourceLocation>[]{
+  switch(callName){
+    case "range":
+      if(kwargs.length==1)
+        return [{a:location, tag:"literal", value:{a:location, tag:"num", value:0}}, kwargs[0][1], {a:location, tag:"literal", value:{a:location, tag:"num", value:1}}]
+      if(kwargs.length==2)
+        return [...kwargs.map(x=>x[1]), {a:location, tag:"literal", value:{a:location, tag:"num", value:1}}]
+    case "sort":
+      let reverse:Expr<SourceLocation> = {a:location, tag:"literal", value:{a:location, tag:"bool", value:false}}
+      let method:Expr<SourceLocation> = {a:location, tag:"literal", value:{a:location, tag:"num", value:0}}
+      if (kwargs.find(x=>x[0]=="reverse"))
+        reverse = kwargs.find(x=>x[0]=="reverse")[1]
+      if (kwargs.find(x=>x[0]=="method"))
+        method = kwargs.find(x=>x[0]=="method")[1]
+      console.log("这什么情况这",[kwargs[0][1], reverse, method])
+      return [kwargs[0][1], reverse, method]
+  }
+  return kwargs.map(x=>x[1])
+}
+
